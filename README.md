@@ -6,7 +6,7 @@
 
 This moniotoring program utilizes Nvidia's DCGM API to retrieve fine-grained, real-time metrics for GPU utilization ***not*** available through ```nvidia-smi``` (or equivalently the NVML API). It also queries the Linux filesystem to retrieve CPU usage, system memory, and network statistics.
 
-This program is meant to be run as a Daemon on GPU Server node. It has minimal overhead and will not impact GPU job performance* (see the very bottom of for an extremely rare hypothetical scenario could cause overhead, capped by the sample frequency). Once the monitoring program is running on the node it will create (if doesn't exist) and populate a SQLite database with server utilization metrics and SLURM job statistics for jobs that have finished running on that node. The database has two tables, ```Data``` (for CPU/GPU/Network metrics) and ```Jobs``` (for jobs that have finished on that node). 
+This program is meant to be run as a Daemon on GPU Server node. It has minimal overhead itself and will not impact GPU job performance* (see the very bottom of for an extremely rare hypothetical scenario could cause overhead, capped by the sample frequency). Once the monitoring program is running on the node it will create (if doesn't exist) and populate a SQLite database with server utilization metrics and SLURM job statistics for jobs that have finished running on that node. The database has two tables, ```Data``` (for CPU/GPU/Network metrics) and ```Jobs``` (for jobs that have finished on that node). 
 
 Every sample will dump ```(num_fields * num_gpus) + 7``` rows the Data table within database.
 
@@ -63,7 +63,7 @@ The data within the ```Jobs``` table is populated every hour based on a SLURM ``
   
 
 #### *Rare Exception that would cause GPU Job Overhead*
-Assume an environment where the monitoring program is running on a node where CPU cores are utilized (with no blocking) **and** the GPU kernels dispatched are small (preventing the host thread from running-ahead). In this case the host-thread dispatching GPU kernels will be switched-out in order for the monitoring program thread to run, but had the switch not occurred more work would have been submitted and processed without the switch. 
+Assume an environment where the monitoring program is running on a node where ***all*** CPU cores are utilized (with no blocking) **and** the GPU kernels dispatched are small (preventing the host thread from running-ahead). In this case the host-thread dispatching GPU kernels will be switched-out in order for the monitoring program thread to run, but had the switch not occurred more work would have been submitted and processed without the switch. 
 
 However, this scenario is likely to never occur. If all CPU cores are being utilized => heavy job => large GPU kernels => more run-ahead for job's host-thread which is dispatching work => disptaching-thread being switched out will not impact performance because there is enough work to be done without any more work being submitted. Then the monitoring program will occupy the CPU for a short duration, collect data, and the job's host-thread will continue submitting work and running ahead. During a sample buffer bump the monitoring program will occupy a core for longer, but this is configurable. 
 
