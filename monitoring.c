@@ -7,9 +7,8 @@
 
 #include "monitoring.h"
 
-#define PRINT 0
+#define TO_PRINT 0
 #define TO_COLLECT_JOB_STATS 1
-#define JOBS_STATS_FREQ_SEC 60 * 60
 #define DEFAULT_OUTPUT_DIR ""
 
 // CPU MONITORING
@@ -306,8 +305,8 @@ int dump_samples_buffer(Samples_Buffer * samples_buffer, sqlite3 * db){
 		insert_sample_to_db(db, time_ns, -1, 11, net_data -> ib_tx_bytes);
 		// SAVE DB SPACE BY NOT STORING ETH DATA. 
 		// PRETTY MUCH NEVER USED SO MIGHT WANT TO COMMENT OUT
-		//insert_sample_to_db(db, time_ns, -1, 14, net_data -> eth_rx_bytes);
-		//insert_sample_to_db(db, time_ns, -1, 15, net_data -> eth_tx_bytes);
+		insert_sample_to_db(db, time_ns, -1, 14, net_data -> eth_rx_bytes);
+		insert_sample_to_db(db, time_ns, -1, 15, net_data -> eth_tx_bytes);
 		
 		// GPU Field dump
 		fieldValues = data.field_values;
@@ -786,7 +785,9 @@ int main(int argc, char ** argv, char * envp[]){
 		// CHECK TO SEE IF IT HAS BEEN AN HOUR SINCE LAST JOB STATUS QUERY
 				// IF SO, CALL PYTHON SCRIPT TO COLLECT INFO FROM SACCT AND DUMP TO DIFFERENT DB
 		time_sec = time.tv_sec;
-		if (TO_COLLECT_JOB_STATS && ((time_sec - prev_job_collection_time) > JOBS_STATS_FREQ_SEC)){
+
+		// Within job_stats.c the call to saccnt queries jobs that have completed within the prevous hour
+		if (TO_COLLECT_JOB_STATS && ((time_sec - prev_job_collection_time) > (60 * 60))){
 			collect_job_stats(db, output_dir, hostbuffer, time_sec);
 			prev_job_collection_time = time_sec;
 		}
@@ -807,7 +808,7 @@ int main(int argc, char ** argv, char * envp[]){
 
 		// COLLECT GPU VALUES
 		
-		if (PRINT) {
+		if (TO_PRINT) {
 			printf("Time %ld: Collecting Values...\n", time.tv_sec);
 		}
 
@@ -826,7 +827,7 @@ int main(int argc, char ** argv, char * envp[]){
 			cleanup_and_exit(dcgm_ret, &dcgmHandle, &groupId, &fieldGroupId);
 		}
 		
-		if (PRINT) {
+		if (TO_PRINT) {
 			if (cpu_util != NULL){
 				printf("CPU Stats. Util: %d, Free Mem: %d\n\nGPU Stats:\n", (int) round(cur_sample -> cpu_util -> util_pct), (int) (cur_sample -> cpu_util -> free_mem));
 			}
@@ -838,7 +839,7 @@ int main(int argc, char ** argv, char * envp[]){
 			}
 		}
 		
-		if (PRINT) {
+		if (TO_PRINT) {
 			void * field_values = cur_sample -> field_values;
 			int ind;
 			unsigned short fieldId, fieldType;

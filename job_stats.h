@@ -15,7 +15,6 @@
 
 #include <sqlite3.h>
 
-
 void collect_job_stats(sqlite3 * job_db, char * out_dir, char * hostname, long time_sec);
 
 
