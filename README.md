@@ -36,15 +36,6 @@ For nodes within a SLURM cluster, it queries the SLURM database to retrieve jobs
 
 The data within the ```Jobs``` table is populated every hour based on a SLURM ```saccnt``` command hard-coded within ```collect_job_stats()``` function located in the file ```job_stats.c```. Collecting job stats is optional and can be turned with with a compile-time parameter (see below).
 
-
-#### Rare Exception that would cause GPU Job Overhead
-Assume an environment where the monitoring program is running on a node where CPU cores are utilized (with no blocking) **and** the GPU kernels dispatched are small (preventing the host thread from running-ahead). In this case the host-thread dispatching GPU kernels will be switched-out in order for the monitoring program thread to run, but had the switch not occurred more work would have been submitted and processed without the switch. 
-
-However, this scenario is likely to never occur. If all CPU cores are being utilized => heavy job => large GPU kernels => more run-ahead for job's host-thread which is dispatching work => disptaching-thread being switched out will not impact performance because there is enough work to be done without any more work being submitted. Then the monitoring program will occupy the CPU for a short duration, collect data, and the job's host-thread will continue submitting work and running ahead. During a sample buffer bump the monitoring program will occupy a core for longer, but this is configurable. 
-
-Moreover, the assumption that all CPU cores have work do to (for duration of sample frequency) is extremely rare.
-
-
 ## Usage
 
 
@@ -71,3 +62,9 @@ Moreover, the assumption that all CPU cores have work do to (for duration of sam
   - This defines the buffer size for holding samples before dumping to the SQLite database. A low buffer size will populate the DB with recent samples and conserve RAM usage in exchange for experiencing poor amortized throughput when writing to the database and consume more aggregate CPU cycles. If the filesystem is on the network then a low buffer size will have to pay high latency overheads. A high buffer size will experience better DB write (and possibly network if DB is over-the-network) throughput and thus conserve CPU cycles. This comes at the cost of higher RAM usage (storing larger buffer) and less recent samples populated in the DB. Note the is a relationship between buffer size and sample frequency. If you do not want to miss any sample intervals then there is an upper-bound for the buffer size which is defined by the duration of time inserting N samples into the DB takes. This should not exceed the sample frequency. 
   
 
+#### *Rare Exception that would cause GPU Job Overhead*
+Assume an environment where the monitoring program is running on a node where CPU cores are utilized (with no blocking) **and** the GPU kernels dispatched are small (preventing the host thread from running-ahead). In this case the host-thread dispatching GPU kernels will be switched-out in order for the monitoring program thread to run, but had the switch not occurred more work would have been submitted and processed without the switch. 
+
+However, this scenario is likely to never occur. If all CPU cores are being utilized => heavy job => large GPU kernels => more run-ahead for job's host-thread which is dispatching work => disptaching-thread being switched out will not impact performance because there is enough work to be done without any more work being submitted. Then the monitoring program will occupy the CPU for a short duration, collect data, and the job's host-thread will continue submitting work and running ahead. During a sample buffer bump the monitoring program will occupy a core for longer, but this is configurable. 
+
+Moreover, the assumption that all CPU cores have work do to (for duration of sample frequency) is extremely rare.
