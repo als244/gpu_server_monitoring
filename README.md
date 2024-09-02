@@ -1,6 +1,6 @@
 # GPU Server Monitoring
 
-### Depenencies
+### Dependencies
 - Nvidia's DCGM Library (libdcgm)
 - SQLite3 (libsqlite3)
 
