@@ -25,6 +25,25 @@ When the sample buffer becomes full, the program will insert a batch of ```num s
         - 14 = Aggregate Bytes Processed by Ethernet interfaces within sample interval
         - 15 = Same as 14, but transmitted
     - Where all other field IDs are defined within [Nvidia DCGM API Ref](https://docs.nvidia.com/datacenter/dcgm/2.0/dcgm-api/group__dcgmFieldIdentifiers.html#group__dcgmFieldIdentifiers) and the populated fields within the database will have been specified as run-time parameter ```--fields or -f``` (which has a default value, see "Run-Time Parameters" below)
+      - The default fields (not specifying the --fields parameters) are:
+        - The usual ```nvidia-smi``` outtputed util % and memory % numbers:
+          - 203: Nvidia-SMI (= NVML API) Coarse Grained GPU Util %
+            - Ratio of cycles that ***any*** SM had warp assigned
+          - 254: Used Memory %
+        - Fine grained DCGM metrics, ***averaged spatially*** across SMs
+          - 1002: SM_ACTIVE
+              - Ratio of cycles at least 1 warp assigned to any SM
+          - 1003: SM_OCCUPANCY
+              - Ratio of warps resident to theoretical maximum warps per cycle
+          - 1004: PIPE_TENSOR_ACTIVE
+              - Ratio of cycles any tensor pipe is active
+        - DCGM device metrics:
+          - 1005: DRAM_ACTIVE:
+              - Ratio of cycles device memory interface is sending or receiving data
+          - 1009: PCIe Transmitted Bytes
+          - 1010: PCIe Received Bytes
+          - 1011: NVLink Transmitted Bytes
+          - 1012: NVLink Received Bytes
     - Note: The updated versions of the DCGM API Docs only list the Enum names and not numbers. However the argument parsing aspect of the program assumes comma-separated list of numbers. If you want to specify based on the Enum, then in a separate program you can print out the enum to retrieve the unsigned short value.  
 4. **value**
     - The value attributed to each field id. The interpretation of field value is relative to the field id.
