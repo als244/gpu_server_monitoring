@@ -11,11 +11,11 @@ This program is meant to be run as a Daemon on GPU Server node. It has minimal o
 When the sample buffer becomes full, the program will insert a batch of ```num samples per buffer * ((num DCGM fields * num gpus) + 7)``` rows into the Data table within a single SQLite transaction (see below for parameter descriptions/defaults). 
 
 ##### Data Table Schema (per row):
-1. **Timestamp** 
+1. **timestamp** 
     - In nanoseconds
-2. **Device ID**
+2. **device_id**
     - Where -1 == CPU, and [0, num_gpus) refers to the system-defined GPU ID
-3. **Field ID**
+3. **field_id**
     - Where Field IDs 0, 1, 2, 10, 11, 14, 15 are custom-defined as:
         - 1 = System Memory Utilized %
         - 2 = Free System Memory in MB
@@ -26,7 +26,7 @@ When the sample buffer becomes full, the program will insert a batch of ```num s
         - 15 = Same as 14, but transmitted
     - Where all other field IDs are defined within [Nvidia DCGM API Ref](https://docs.nvidia.com/datacenter/dcgm/2.0/dcgm-api/group__dcgmFieldIdentifiers.html#group__dcgmFieldIdentifiers) and the populated fields within the database will have been specified as run-time parameter ```--fields or -f``` (which has a default value, see "Run-Time Parameters" below)
     - Note: The updated versions of the DCGM API Docs only list the Enum names and not numbers. However the argument parsing aspect of the program assumes comma-separated list of numbers. If you want to specify based on the Enum, then in a separate program you can print out the enum to retrieve the unsigned short value.  
-4. **Field Value**
+4. **value**
     - The value attributed to each field id. The interpretation of field value is relative to the field id.
     
 For nodes within an RDMA network, it queries the ```/sys/class/infiniband/<ib_dev_id>/ports/1/counters/port_[rcv|xmit]_data``` files (valid for Mellanox cards, unknown for other vendors) to retrieve physical network traffic. This assumes that the network setup has made all ports on a given network card separately defined IB Devices (all with a single port).
