@@ -8,7 +8,7 @@ This moniotoring program utilizes Nvidia's DCGM API to retrieve fine-grained, re
 
 This program is meant to be run as a Daemon on GPU Server node. It has minimal overhead itself and will not impact GPU job performance* (see the very bottom of for an extremely rare hypothetical scenario that could cause job overhead, capped by: duration of sample iteration/sample frequency, as a percentage). Once the monitoring program is running on the node it will create (if doesn't exist) and populate a SQLite database with server utilization metrics and SLURM job statistics for jobs that have finished running on that node. The database has two tables, ```Data``` (for CPU/GPU/Network metrics) and ```Jobs``` (for jobs that have finished on that node). 
 
-When the sample buffer (see below for parameter descriptions/defaults) becomes full, the program will insert a batch of ```num samples per buffer * ((num_fields * num_gpus) + 7)``` rows into the Data table within a single SQLite transaction. 
+When the sample buffer (see below for parameter descriptions/defaults) becomes full, the program will insert a batch of ```num samples per buffer * ((num DCGM fields * num gpus) + 7)``` rows into the Data table within a single SQLite transaction. 
 
 ##### Data Table Schema (per row):
 1. **Timestamp** 
@@ -29,7 +29,7 @@ When the sample buffer (see below for parameter descriptions/defaults) becomes f
 4. **Field Value**
     - The value attributed to each field id. The interpretation of field value is relative to the field id.
     
-For nodes within an RDMA network, it queries the ```/sys/class/infiniband/<ib_dev_id>/ports/1/counters/port_[rcv|xmit]_data``` files to retrieve physical network traffic. This assumes that the network setup has made all ports on a given network card separately defined IB Devices (all with a single port).
+For nodes within an RDMA network, it queries the ```/sys/class/infiniband/<ib_dev_id>/ports/1/counters/port_[rcv|xmit]_data``` files (valid for Mellanox cards, unknown for other vendors) to retrieve physical network traffic. This assumes that the network setup has made all ports on a given network card separately defined IB Devices (all with a single port).
 
 
 For nodes within a SLURM cluster, it queries the SLURM database to retrieve jobs that have completed on the same node that the monitoring program running on.
