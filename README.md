@@ -22,7 +22,7 @@ When the sample buffer becomes full, the program will insert a batch of ```num s
         - 3 = CPU Utilization % (averaged across all cores)
         - 10 = Aggregate Bytes Received on all Infiniband Network Devices within sample interval
         - 11 = Same as 10, but Transmitted bytes
-        - 14 = Aggregate Bytes Processed by Ethernet interfaces within sample interval
+        - 14 = Aggregate Bytes Received on all Ethernet interfaces within sample interval
         - 15 = Same as 14, but transmitted
     - Where all other field IDs are defined within [Nvidia DCGM API Ref](https://docs.nvidia.com/datacenter/dcgm/2.0/dcgm-api/group__dcgmFieldIdentifiers.html#group__dcgmFieldIdentifiers) and the populated fields within the database will have been specified as run-time parameter ```--fields or -f``` (which has a default value, see "Run-Time Parameters" below)
       - The default fields (not specifying the --fields parameters) are:
