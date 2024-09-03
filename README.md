@@ -34,7 +34,7 @@ For nodes within an RDMA network, it queries the ```/sys/class/infiniband/<ib_de
 
 For nodes within a SLURM cluster, it queries the SLURM database to retrieve jobs that have completed on the same node that the monitoring program running on.
 
-The data within the ```Jobs``` table is populated every hour based on a SLURM ```saccnt``` command hard-coded within ```collect_job_stats()``` function located in the file ```job_stats.c```. Collecting job stats is optional and can be turned with with a compile-time parameter (see below).
+The data within the ```Jobs``` table is populated every hour based on a SLURM ```saccnt``` command hard-coded within ```collect_job_stats()``` function located in the file ```job_stats.c```. Collecting job stats is optional and can be toggled with with a compile-time parameter (see below).
 
 ## Usage
 
