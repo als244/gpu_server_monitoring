@@ -6,7 +6,7 @@
 
 This moniotoring program utilizes Nvidia's DCGM API to retrieve fine-grained, real-time metrics for GPU utilization ***not*** available through ```nvidia-smi``` (or equivalently the NVML API). It also queries the Linux filesystem to retrieve CPU usage, system memory, and network statistics.
 
-This program is meant to be run as a Daemon on GPU Server node. It has minimal overhead itself and will not impact GPU job performance* (see the very bottom of for an extremely rare hypothetical scenario that could cause job overhead, capped by the sample frequency). Once the monitoring program is running on the node it will create (if doesn't exist) and populate a SQLite database with server utilization metrics and SLURM job statistics for jobs that have finished running on that node. The database has two tables, ```Data``` (for CPU/GPU/Network metrics) and ```Jobs``` (for jobs that have finished on that node). 
+This program is meant to be run as a Daemon on GPU Server node. It has minimal overhead itself and will not impact GPU job performance* (see the very bottom of for an extremely rare hypothetical scenario that could cause job overhead, capped by the duration of sample iteration = ~3ms/sample frequency %). Once the monitoring program is running on the node it will create (if doesn't exist) and populate a SQLite database with server utilization metrics and SLURM job statistics for jobs that have finished running on that node. The database has two tables, ```Data``` (for CPU/GPU/Network metrics) and ```Jobs``` (for jobs that have finished on that node). 
 
 Every sample will dump ```(num_fields * num_gpus) + 7``` rows the Data table within database.
 
@@ -67,4 +67,4 @@ Assume an environment where the monitoring program is running on a node where **
 
 However, this scenario is likely to never occur. If all CPU cores are being utilized => heavy job => large GPU kernels => more run-ahead for job's host-thread which is dispatching work => disptaching-thread being switched out will not impact performance because there is enough work to be done without any more work being submitted. Then the monitoring program will occupy the CPU for a short duration, collect data, and the job's host-thread will continue submitting work and running ahead. During a sample buffer bump the monitoring program will occupy a core for longer, but this is configurable. 
 
-Moreover, the assumption that all CPU cores have work do to (for duration of sample frequency) is extremely rare.
+Moreover, the assumption that all CPU cores have work do to (for duration of sample interval = ~a few ms) is extremely rare.
