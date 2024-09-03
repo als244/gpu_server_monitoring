@@ -8,7 +8,7 @@ This moniotoring program utilizes Nvidia's DCGM API to retrieve fine-grained, re
 
 This program is meant to be run as a Daemon on GPU Server node. It has minimal overhead itself and will not impact GPU job performance* (see the very bottom of for an extremely rare hypothetical scenario that could cause job overhead, capped by: duration of sample iteration/sample frequency, as a percentage). Once the monitoring program is running on the node it will create (if doesn't exist) and populate a SQLite database with server utilization metrics and SLURM job statistics for jobs that have finished running on that node. The database has two tables, ```Data``` (for CPU/GPU/Network metrics) and ```Jobs``` (for jobs that have finished on that node). 
 
-When the sample buffer (see below for parameter descriptions/defaults) becomes full, the program will insert a batch of ```num samples per buffer * ((num DCGM fields * num gpus) + 7)``` rows into the Data table within a single SQLite transaction. 
+When the sample buffer becomes full, the program will insert a batch of ```num samples per buffer * ((num DCGM fields * num gpus) + 7)``` rows into the Data table within a single SQLite transaction (see below for parameter descriptions/defaults). 
 
 ##### Data Table Schema (per row):
 1. **Timestamp** 
