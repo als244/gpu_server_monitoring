@@ -1,12 +1,20 @@
 # GPU Server Monitoring
 
+---
+
 ### Dependencies
 - Nvidia's DCGM Library (libdcgm)
 - SQLite3 (libsqlite3)
 
+---
+
+### Description
+
 This moniotoring program utilizes Nvidia's DCGM API to retrieve fine-grained, real-time metrics for GPU utilization ***not*** available through ```nvidia-smi``` (or equivalently the NVML API). It also queries the Linux filesystem to retrieve CPU usage, system memory, and network statistics.
 
-This program is meant to be run as a Daemon on GPU Server node. It has minimal overhead itself and will not impact GPU job performance* (see the very bottom for explanation of a special case. I have ran tests confirming 0 overhead in common case and bounded-overhead in special case). Once the monitoring program is running on the node it will create (if doesn't exist) and populate a SQLite database with server utilization metrics and SLURM job statistics for jobs that have finished running on that node. The database has two tables, ```Data``` (for CPU/GPU/Network metrics) and ```Jobs``` (for jobs that have finished on that node). 
+This program is meant to be run as a daemon process on GPU server node. **It has minimal overhead itself and will not impact GPU job performance<sup>+</sup>** (Note: see the very bottom for explanation of a special case. I have ran benchmarks confirming 0 overhead in common case and bounded-overhead in the special case, which I artificially constructed because unlikely to ever occur in-the-wild). 
+
+Once the monitoring program is running on the node it will create (if doesn't exist) and populate a SQLite database with server utilization metrics and SLURM job statistics for jobs that have finished running on that node. The database has two tables, ```Data``` (for CPU/GPU/Network metrics) and ```Jobs``` (for jobs that have finished on that node). 
 
 When the sample buffer becomes full, the program will insert a batch of ```num samples per buffer * ((num DCGM fields * num gpus) + 7)``` rows into the Data table within a single SQLite transaction (see below for parameter descriptions/defaults). 
 
@@ -57,10 +65,13 @@ For nodes within a SLURM cluster, it queries the SLURM database to retrieve jobs
 
 The data within the ```Jobs``` table is populated every hour based on a SLURM ```saccnt``` command hard-coded within ```collect_job_stats()``` function located in the file ```job_stats.c```. Collecting job stats is optional and can be toggled with with a compile-time parameter (see below).
 
+---
+
 ## Usage
 
+### Parameters
 
-### Compile-Time Parameters
+#### Compile-Time (Optional)
 - Within ```monitoring.c``` there are some constants defined at the top:
     - **TO_PRINT**
         - When initially setting up the monitoring it might be helpful to print out all the values the that program will dump to database to ensure that you have it set up things properly. Toggling this to 1 will print out values in real time
@@ -69,7 +80,7 @@ The data within the ```Jobs``` table is populated every hour based on a SLURM ``
     - **TO_COLLECT_JOB_STATS**
         - If the program is being run on node within a SLURM cluster, you can collect information about slurm jobs that have fishing running on that node. The file 'job_stats.h' has the data structure for the information that is queried from SLURM's ```saccnt``` CLI. The file ```job_stats.c``` has the functions responsible for calling ```saccnt``` and dumping the corresponding results within the jobs database. Jobs are queried every hour and any new jobs that have finished within the hour will be added to the database.
 
-### Run-Time Parameters (Optional)
+#### Run-Time (Optional)
 1. **Output Directory** (specified by --output_dir or -o)
   - This overwrites the value of DEFAULT_OUTPUT_DIR set at compile-time
 2. **DCGM Fields** (specified by --fields or -f)
@@ -82,8 +93,13 @@ The data within the ```Jobs``` table is populated every hour based on a SLURM ``
 4. **Number of Samples Per Buffer** (specified by --n_samples_per_buffer or -n)
   - This defines the buffer size for holding samples before dumping to the SQLite database. A low buffer size will populate the DB with recent samples and conserve RAM usage in exchange for experiencing poor amortized throughput when writing to the database and consume more aggregate CPU cycles. If the filesystem is on the network then a low buffer size will have to pay high latency overheads. A high buffer size will experience better DB write (and possibly network if DB is over-the-network) throughput and thus conserve CPU cycles. This comes at the cost of higher RAM usage (storing larger buffer) and less recent samples populated in the DB. Note the is a relationship between buffer size and sample frequency. If you do not want to miss any sample intervals then there is an upper-bound for the buffer size which is defined by the duration of time inserting N samples into the DB takes. This should not exceed the sample frequency. 
   
+### Running the Tool
 
-#### *Rare Exception that would cause GPU Job Overhead*
+After (optionally) setting the build parameters you can run ```make``` in this directory. Then you can run the executable ```./monitor <optional args>``` to start collecting data.
+  
+--- 
+
+##### <sup>+</sup>*Rare Exception that would cause GPU Job Overhead*
 Assume an environment where the monitoring program is running on a node where ***all*** CPU cores are utilized (with no blocking) **and** the GPU kernels dispatched are small. In this case, the monitoring program will be forced to preempt a job's thread (which may have been dispatching small GPU kernels without running ahead). Had the switch not occurred more work would have been submitted and immediately processed (because in this scenario we assumed small GPU kernels) meaning the job would have finished faster and thus the monitoring caused job overhead. This overhead is upper-bounded by the time each sample iteration takes (roughly on order of hundreds of microseconds to single-digit milliseconds -- most of which is spent within the DCGM library calls) divided by the sample frequency (in time units).
 
 However, this scenario is likely to never occur. If all CPU cores are being utilized => heavy job => large GPU kernels => more run-ahead for job's host-thread which is dispatching work => disptaching-thread being preempted by monitoring thread and getting switched out will not impact performance because there is enough work to be done without any more work being submitted. Then the monitoring program will occupy the CPU for a short duration, collect data, and the job's host-thread will continue submitting work and running ahead. During a sample buffer bump the monitoring program will occupy a core for longer, but this is configurable (smaller buffer size => more even distribution of iteration times per collection window, but with higher average). 
