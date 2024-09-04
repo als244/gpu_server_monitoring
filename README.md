@@ -10,6 +10,8 @@ This program is meant to be run as a Daemon on GPU Server node. It has minimal o
 
 When the sample buffer becomes full, the program will insert a batch of ```num samples per buffer * ((num DCGM fields * num gpus) + 7)``` rows into the Data table within a single SQLite transaction (see below for parameter descriptions/defaults). 
 
+I have uploaded an example notebook, ```analyze_data.ipynb``` which demonstrates converting the GPU metrics saved in the Data table of SQLite DB to a compact numpy representation that can be used for further analysis. 
+
 ##### Data Table Schema (per row):
 1. **timestamp** 
     - In nanoseconds
