@@ -10,9 +10,9 @@
 
 ### Description
 
-This moniotoring program utilizes Nvidia's DCGM API to retrieve fine-grained, real-time metrics for GPU utilization ***not*** available through ```nvidia-smi``` (or equivalently the NVML API). It also queries the Linux filesystem to retrieve CPU usage, system memory, and network statistics.
+This monitoring program utilizes Nvidia's DCGM API to retrieve fine-grained, real-time metrics for GPU utilization ***not*** available through ```nvidia-smi``` (or equivalently the NVML API). It also queries the Linux filesystem to retrieve CPU usage, system memory, and network statistics.
 
-This program is meant to be run as a daemon process on GPU server node. **It has minimal overhead itself and will not impact GPU job performance<sup>+</sup>** (Note: see the very bottom for explanation of a special case. I have ran benchmarks confirming 0 overhead in common case and bounded-overhead in the special case, which I artificially constructed because unlikely to ever occur in-the-wild). 
+This program is meant to be run as a daemon process on GPU server node. **It has minimal overhead itself and will not impact job performance<sup>+</sup>** (Note: see the very bottom for an explanation of a special case. I ran benchmarks confirming 0 overhead in common case and an upper-bounded overhead in the special case, of which I artificially constructed because it is unlikely to ever occur in-the-wild). 
 
 Once the monitoring program is running on the node it will create (if doesn't exist) and populate a SQLite database with server utilization metrics and SLURM job statistics for jobs that have finished running on that node. The database has two tables, ```Data``` (for CPU/GPU/Network metrics) and ```Jobs``` (for jobs that have finished on that node). 
 
